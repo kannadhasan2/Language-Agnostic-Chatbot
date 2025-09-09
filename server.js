@@ -9,7 +9,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 const jwt = require("jsonwebtoken")
-const dbPath = path.join(__dirname, "aeclibrary.db");
+const dbPath = path.join(__dirname, "project.db");
 let db = null;
 const initializationOfDBAndServer = async () => {
   try {
