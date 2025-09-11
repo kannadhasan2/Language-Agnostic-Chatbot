@@ -59,4 +59,15 @@ app.get("/",(request,response) =>{
   response.send("Working")
 })
 
+app.post('/register',async (request,response)=>{
+  const {userId,userName,email,password} = request.body;
+  const registerUserQuery = `
+    INSERT INTO user (user_id,user_name,email,password)
+    VALUES ('${userId}','${userName}','${email}','${password}');
+  `
+  await db.execute(registerUserQuery)
+  response.send("User Registered Successfully")
+})
+
+
 export default app;
