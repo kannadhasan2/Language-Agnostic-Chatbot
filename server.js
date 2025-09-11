@@ -59,15 +59,27 @@ app.get("/",(request,response) =>{
   response.send("Working")
 })
 
-app.post('/register',async (request,response)=>{
-  const {userId,userName,email,password} = request.body;
-  const registerUserQuery = `
-    INSERT INTO user (user_id,user_name,email,password)
-    VALUES ('${userId}','${userName}','${email}','${password}');
-  `
-  await db.execute(registerUserQuery)
-  response.send("User Registered Successfully")
-})
+app.post("/register", async (request, response) => {
+  try {
+    const { userId, userName, email, password } = request.body;
+
+    const registerUserQuery = `
+      INSERT INTO users (user_id, user_name, email, password)
+      VALUES (?, ?, ?, ?)
+    `;
+
+    await db.execute({
+      sql: registerUserQuery,
+      args: [userId, userName, email, password],
+    });
+
+    response.send({ message: "User Registered Successfully" });
+  } catch (error) {
+    console.error("Registration Error:", error.message);
+    response.status(500).send({ error: "Failed to register user" });
+  }
+});
+
 
 
 export default app;
