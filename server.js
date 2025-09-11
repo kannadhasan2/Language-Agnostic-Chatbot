@@ -64,7 +64,7 @@ app.post("/register", async (request, response) => {
     const { userId, userName, email, password } = request.body;
 
     const registerUserQuery = `
-      INSERT INTO users (user_id, user_name, email, password)
+      INSERT INTO user (user_id, user_name, email, password)
       VALUES (?, ?, ?, ?)
     `;
 
