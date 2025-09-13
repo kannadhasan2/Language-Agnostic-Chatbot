@@ -2,6 +2,8 @@ import 'dotenv/config';
 import express from "express";
 import { createClient } from "@libsql/client";
 import cors from "cors";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs"
 
 const app = express();
 
@@ -55,14 +57,29 @@ const initializeDB = async () => {
 
 initializeDB();
 
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const jwtToken = authHeader && authHeader.split(" ")[1];
+
+  if (!jwtToken) return res.status(401).send("Invalid JWT Token");
+
+  jwt.verify(jwtToken, process.env.JWT_SECRET, (error, payload) => {
+    if (error) return res.status(401).send("Invalid JWT Token");
+    req.register_no = payload.register_no;
+    next();
+  });
+};
+
+// Test API
 app.get("/",(request,response) =>{
   response.send("Working")
 })
 
+// Register API
 app.post("/register", async (request, response) => {
   try {
     const { userId, userName, email, password } = request.body;
-
+    const hashedPassword = await bcrypt.hash(password,5)
     const registerUserQuery = `
       INSERT INTO user (user_id, user_name, email, password)
       VALUES (?, ?, ?, ?)
@@ -70,7 +87,7 @@ app.post("/register", async (request, response) => {
 
     await db.execute({
       sql: registerUserQuery,
-      args: [userId, userName, email, password],
+      args: [userId, userName, email, hashedPassword],
     });
 
     response.send({ message: "User Registered Successfully" });
@@ -81,5 +98,23 @@ app.post("/register", async (request, response) => {
 });
 
 
+// Login API
+app.post("/login",async (request,response)=>{
+  const {email,password} = request.body 
+  
+  const dbUser = await db.execute({
+    sql:"SELECT * FROM user WHERE email = ?",
+    args:[email],
+  })
+  if (dbUser.rows.length === 0) return res.status(400).send("Invalid Email");
+  const user = dbUser.rows[0];
+  const isPasswordValid = await bcrypt.compare(password,user.password)
+  if (isPasswordValid) {
+    const jwtToken = jwt.sign({ email: email }, process.env.JWT_SECRET);
+    response.send({ jwt_token: jwtToken });
+  } else {
+    response.status(400).send("Incorrect Password");
+  }
+})
 
 export default app;
